@@ -1,0 +1,270 @@
+--- WEEK 1 - Introduction
+
+https://github.com/kamavarapu/10gen/tree/master/05/lesson_files
+
+MongoDB is schemaless
+MongoDB is document oriented
+MongoDB does not supports join
+MongoDB does not support SQL
+
+- Joins are NOT horizontally scalable
+- Even Numbers (middle digit) stable releases
+- Odd Numbers (middle digit) development branch
+
+// Default mongo db directories
+- mkdir \data
+- mkdir \data\db
+
+mongod --version
+mongod --help
+
+// Start the daemon
+mongod
+
+// mongo shell
+mongo --help
+
+mongo
+or
+mongo localhost/test
+
+db // shows db connected to
+show dbs // dbs is the database
+show collections // collections in the current db 
+
+dir data\db
+
+// For easy_install on windows need to install setuptools http://pypi.python.org/pypi/setuptools
+
+// Install bottle framework
+C:\Python27\Scripts>easy_install -U bottle
+
+// Install pymongo from http://pypi.python.org/pypi/pymongo/
+
+// Mongo Default Port = 27017
+
+JSON 2 types
+* Arrays - list of things [...]
+* Dictionaries - associative maps {'key':'val'}
+
+Standard at - www.json.org
+
+object = document
+
+Consideration: To embed or Not to embed a document inside a document?
+
+Not to Embded when:
+* A document in MongoDB can't be > 16 MB
+ - So if the document that we are going to embed within a document Exceeds 16 MB its NOT possible to embed.
+* Update is very likely to within a document then NOT embed
+
+Embed when
+* Data is closely coupled i.e. need to be accessed at the same time then its better to embed
+* If data is isomorphic (isomorphic means all of same type) then we can embed for example. 
+Comments are isomorphic the comment can be stored in an array within a post collection
+
+* Mongo DB stores collections (tables).
+* Table have documents (rows)
+* Only document can be stored in a collection not an array or primitive type
+
+--- END OF WEEK 1
+
+--- WEEK 2 - CRUD
+
+---
+
+
+default mode for writes is fire and forget it won't wait actual write to get completed i.e. safe=False in connection string
+
+// Restore mongo db
+locate to the directory containing dump
+mongorestore
+//OR
+mongorestore dump
+
+@@@ End of Week 1 - Introduction
+
+Terminologies
+Soft. Engr. - MongoDB 	- SQL
+Create 		- Insert 	- Insert
+Read 		- Find		- Select
+Update 		- Update	- Update
+Delete		- Remove	- Delete
+
+help keys
+
+bson types are superset 
+
+
+
+bsonspec.org
+
+bson does not support Complex Numbers
+
+_id is primary key and is immutable not updateble and is unique within the collection
+
+Server closes the cursor after 10 min (default)
+
+sort skip limit are applied in this order
+1. sort
+2. skip
+3. limit
+
+update can't update the _id field value
+(whole) update discards all the other existing info
+
+update in mongoshell performs 4 operations
+1. whole replacement of document
+2. manipulate individual field of document
+3. upsert (update or insert)
+4. (update) multiple documents
+
+Writes operations are not isolated transactions
+Individual write operations are atomic
+
+Removing of individual document is Atomic. No reader will see the document half removed.
+
+mongo < create_student_collection.js
+
+Why tuples are used in sorting instead of dict in pymongo?
+1. dict are not ordered
+2. orders matters for sorting
+
+JSON retains the order of key/value pairs
+
+mongoimport -d students -c grades < grades.js
+
+Pre Join/Embed Data
+Mongo DB does not support joins
+No constraints
+No Declared Schema
+
+one to many
+When many is large then its better to have separate collections
+
+INDEXES
+(a,b,c)
+a - Yes
+b - No
+c - No
+a,b - Yes
+a,c - Only a
+
+Its not possible to create multikey index on 2 arrays
+Indexes can be created for keys at any level
+
+Index creation can be ran in a background
+background:true
+by default background:false
+
+"cursor" : "BasicCursor",
+means Index is not used
+
+"cursor" : "BtreeCursor a_1_b_1_c_1",
+means Index is used
+
+INDEXES
+d c b a
+d - Yes
+d c - Yes
+d b - Yes (a)
+c b - No
+
+Index Selectivity - The more selective field in 1st place in Compound Index
+example
+	logging
+	save timestamp
+	open timestamp
+	put timestamp
+	get timestamp
+	run timestamp
+Index on (opcode,timestamp)
+Index on (timestamp,opcode) - is better as greater data is eliminated and is more selective as compared to above
+
+Things that might not use index or use index efficiently are
+$gt
+$lt
+$ne
+All negative operators
+
+$regex
+if its /abcd/ - in between not left most part then it cant use index but
+/^abcd/ - will use index
+
+Profiling - 3 levels
+0 - off
+1 - log slow queries
+2 - log all queries
+
+mongod -dbpath /data/db --profile 1 --slowms 1
+
+Review - Performance
+1. Indexes are critical to performance
+2. Explain
+3. Hint
+4. Profiling
+
+For looking performance of mongod installations at the highest level
+mongostat
+field - idx miss % is the index miss percentage
+
+sharding - splitting large collection into multiple servers
+- for insert shard key is required
+- it is recommended to use shard key if its known otherwise mongos will broadcast it to all shards
+- for update - if not then its multi-update
+
+mongos - Router - Located at same location as application
+
+@@@ end of Week 4
+
+Aggregation Pipeline
+$project		- select, reshape		1:1
+$match			- filter				n:1
+$group			- aggregation 			n:1
+$sort 			- sort 					1:1
+$skip 			- skips					n:1
+$limit 			- limit 				n:1
+$unwind 								1:n
+
+Grouped elemented are uniquely returned in Aggregate
+
+Aggregation Expresson Overview - For aggregation/grouping stage of the pipeline
+$sum
+$avg
+$max
+$min
+$push
+$addtoset
+$first - requires sort to make any sense
+$last  - requires sort to make any sense
+
+unwind - unjoins/explodes the arrays into multiple docs
+
+Limitations of Aggregation Framework
+- 16 MB doc
+- 10% of memory
+- Calculations might take place at mongos in sharded environment
+
+write concern
+
+w(wait)	 |	j(journal) |
+0 		 |	0 		   | fire and forget
+1 		 |	0 		   | acknowledge (Default as of pymongo 2.4)
+1 		 |	1 		   | commit to journal
+0 		 |	1 		   | getLastError
+
+api.mongodb.org
+
+failover can result in roll back of data. If primary goes down during writing
+
+MongoReplicaClient - will not return exception if failover occurs. It also has various useful features
+
+j=1 - commit to journal on primary
+wtimeout - amount of time to wait
+w=1 - wait for write on primary
+w=2 - wait for primary and 1 secondary node
+w='majority' - 1 primary and some secondary and is enough to avoid rollback
+
+Always set wtimeout to some value if using w>1
+
+Sharding is horizontal splitting of data for scalling out
