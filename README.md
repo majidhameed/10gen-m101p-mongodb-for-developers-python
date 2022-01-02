@@ -1,3 +1,5 @@
+![](https://img.shields.io/github/license/majidhameed/10gen-m101p-mongodb-for-developers-python?style=plastic)
+
 ### Course Title: 
 M101P: MongoDB for Developers
 
